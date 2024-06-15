@@ -1,0 +1,56 @@
+# Install ImportExcel module if not already installed
+if (-not (Get-Module -ListAvailable -Name ImportExcel)) {
+    Install-Module -Name ImportExcel -Force -Scope CurrentUser
+}
+
+# Import the ImportExcel module
+Import-Module ImportExcel
+
+# Define the path to the Excel file
+$excelFilePath = "C:\test.xlsx"
+
+# Define the sheet name
+$sheetName = "Sheet1"
+
+# Read the Excel file
+$excelData = Import-Excel -Path $excelFilePath -WorksheetName $sheetName
+
+# Function to ping a host and return the response time and IP address
+function Get-PingInfo {
+    param (
+        [string]$DNS_Server
+    )
+    $pingResult = Test-Connection -ComputerName $DNS_Server -Count 1 -ErrorAction SilentlyContinue
+    if ($pingResult) {
+        return [PSCustomObject]@{
+            ResponseTime = $pingResult.ResponseTime
+            IPAddress = $pingResult.ProtocolAddress
+        }
+    } else {
+        return [PSCustomObject]@{
+            ResponseTime = "Timeout"
+            IPAddress = "N/A"
+        }
+    }
+}
+
+# Iterate over each row in the Excel data
+foreach ($row in $excelData) {
+    $DNS_Server = $row.'DNS_Server'
+
+    # Ping the host and get the response time and IP address
+    $pingInfo1 = Get-PingInfo -DNS_Server $DNS_Server
+    $pingInfo2 = Get-PingInfo -DNS_Server $DNS_Server
+    $pingInfo3 = Get-PingInfo -DNS_Server $DNS_Server
+    $pingInfo4 = Get-PingInfo -DNS_Server $DNS_Server
+
+    # Update the Excel data with the ping times and IP address
+    $row.'IPAddress' = $pingInfo1.IPAddress # Populate the IP address in the 'IPAddress' column
+    $row.'PingTime1' = $pingInfo1.ResponseTime
+    $row.'PingTime2' = $pingInfo2.ResponseTime
+    $row.'PingTime3' = $pingInfo3.ResponseTime
+    $row.'PingTime4' = $pingInfo4.ResponseTime
+}
+
+# Export the updated data back to the Excel file
+$excelData | Export-Excel -Path $excelFilePath -WorksheetName $sheetName -AutoSize
